@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stringjax-tools"
+version = "0.1.0.dev0"
+description = "Reusable JAX transform, vectorisation, cache, and pytree helpers for StringJAX packages."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Andreas Schachner", email = "as3475@cornell.edu"},
+]
+keywords = [
+    "jax",
+    "vmap",
+    "jit",
+    "pytrees",
+    "automatic-vectorisation",
+    "scientific-computing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "jax",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "nbclient",
+    "nbformat",
+    "ipykernel",
+    "pytest",
+]
+docs = [
+    "matplotlib",
+    "myst-nb",
+    "roman",
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "sphinx-book-theme",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-togglebutton",
+    "sphinxcontrib-mermaid",
+]
+
+[project.urls]
+Homepage = "https://github.com/StringJAX/stringjax-tools"
+Issues = "https://github.com/StringJAX/stringjax-tools/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+stringjax_tools = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

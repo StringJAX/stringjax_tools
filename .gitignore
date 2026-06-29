@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+documentation/build/
+documentation/jupyter_execute/
+
+documentation/.DS_Store
+.DS_Store
