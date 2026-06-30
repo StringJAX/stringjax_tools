@@ -1,7 +1,7 @@
 # StringJAX Tools
 
 `stringjax_tools` is a small utility package for reusable JAX transform
-patterns used across StringJAX projects.  It currently focuses on:
+patterns used across [StringJAX](https://github.com/StringJAX) projects.  It currently focuses on:
 
 - conservative rank-checked automatic vectorisation;
 - manual cached `jax.jit(jax.vmap(...))` wrappers;
