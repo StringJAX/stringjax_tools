@@ -12,8 +12,8 @@ Main public API
 
 Design notes
 ------------
-This file mirrors the default documentation behavior used by JAXVacua while
-remaining scoped to the standalone ``stringjax_tools`` package.
+This file keeps the documentation build scoped to the standalone
+``stringjax_tools`` package.
 """
 
 from __future__ import annotations
@@ -185,4 +185,3 @@ def _normalise_project_docstring(app, what, name, obj, options, lines):
 
 def setup(app):
     app.connect("autodoc-process-docstring", _normalise_project_docstring)
-

@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "stringjax-tools"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Reusable JAX transform, vectorisation, cache, and pytree helpers for StringJAX packages."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     {name = "Andreas Schachner", email = "as3475@cornell.edu"},
 ]
@@ -24,7 +25,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -33,16 +33,18 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "jax",
-    "numpy",
+    "jax>=0.4.26",
+    "numpy>=1.24",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "build",
     "nbclient",
     "nbformat",
     "ipykernel",
     "pytest",
+    "twine",
 ]
 docs = [
     "matplotlib",

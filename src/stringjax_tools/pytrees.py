@@ -26,8 +26,9 @@ recomputable eager caches or scratch state.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any, Callable
 
 import jax
@@ -52,6 +53,25 @@ def _as_tuple(values: Iterable[Any] | None) -> tuple[Any, ...]:
     return tuple(values)
 
 
+def _as_key_tuple(kind: str, values: Iterable[str] | None) -> tuple[str, ...]:
+    r"""Normalise and validate attribute-name iterables."""
+    keys = _as_tuple(values)
+    invalid = [key for key in keys if not isinstance(key, str)]
+    if invalid:
+        raise ValueError(f"{kind} must contain only string attribute names, got {invalid!r}.")
+    return keys
+
+
+def _validate_disjoint_keys(static_keys: Iterable[str], ignore_keys: Iterable[str]) -> None:
+    r"""Reject ambiguous pytree policies where static state would be ignored."""
+    overlap = sorted(set(static_keys).intersection(ignore_keys))
+    if overlap:
+        raise ValueError(
+            "Pytree attributes cannot be both static and ignored: "
+            f"{overlap}. Keep semantic state static and ignore only caches."
+        )
+
+
 def _validate_static_value(key: str, value: Any) -> None:
     r"""Raise if ``value`` is unsuitable for JAX pytree auxiliary data."""
     try:
@@ -74,6 +94,11 @@ def _validate_static_value(key: str, value: Any) -> None:
         raise ValueError(
             f"Static pytree attribute {key!r} does not compare to a scalar bool. "
             "This usually means an array-like object was marked static."
+        )
+    if not bool(equality):
+        raise ValueError(
+            f"Static pytree attribute {key!r} is not self-equal. "
+            "This usually means a NaN-like value was marked static."
         )
 
 
@@ -104,8 +129,12 @@ def flatten_func(
         ``jax.tree_util.register_pytree_node``.  ``aux_data`` is structured as
         ``(child_keys, static_items)``.
     """
-    static_key_set = set(_as_tuple(static_keys))
-    ignore_key_set = set(_as_tuple(ignore_keys))
+    static_key_tuple = _as_key_tuple("static_keys", static_keys)
+    ignore_key_tuple = _as_key_tuple("ignore_keys", ignore_keys)
+    _validate_disjoint_keys(static_key_tuple, ignore_key_tuple)
+
+    static_key_set = set(static_key_tuple)
+    ignore_key_set = set(ignore_key_tuple)
 
     children: list[Any] = []
     child_keys: list[str] = []
@@ -126,10 +155,17 @@ def flatten_func(
     return tuple(children), (tuple(child_keys), tuple(static_items))
 
 
+def _materialise_default(default: Any) -> Any:
+    r"""Return an ignored-attribute default, calling factories when supplied."""
+    return default() if callable(default) else default
+
+
 def unflatten_func_class(
     aux_data: AuxData,
     children: tuple[Any, ...],
     myclass: type,
+    *,
+    ignore_defaults: Mapping[str, Any] | None = None,
 ) -> Any:
     r"""
     Reconstruct ``myclass`` from pytree auxiliary data and children.
@@ -137,6 +173,14 @@ def unflatten_func_class(
     ``__init__`` is intentionally bypassed.  This mirrors the standard pattern
     for JAX pytree registration of stateful objects whose constructors may
     perform validation, IO, or other eager side effects.
+
+    Args:
+        aux_data: Auxiliary data returned by :func:`flatten_func`.
+        children: Dynamic children returned by :func:`flatten_func`.
+        myclass: Class to reconstruct.
+        ignore_defaults: Optional defaults for ignored attributes.  Callable
+            defaults such as ``dict`` are called each time, so reconstructed
+            objects do not share mutable containers.
     """
     child_keys, static_items = aux_data
     if len(child_keys) != len(children):
@@ -150,6 +194,8 @@ def unflatten_func_class(
         object.__setattr__(obj, key, value)
     for key, value in static_items:
         object.__setattr__(obj, key, value)
+    for key, default in (ignore_defaults or {}).items():
+        object.__setattr__(obj, key, _materialise_default(default))
     return obj
 
 
@@ -159,30 +205,58 @@ class PytreePolicy:
     Shared pytree flattening policy for one package or model family.
 
     A StringJAX package should define its domain-specific ``static_keys`` and
-    ``ignore_keys`` locally, then reuse one policy to register all classes that
-    share the same state conventions.
+    ignored-cache policy locally, then reuse one policy to register all classes
+    that share the same state conventions.
 
     Warning:
-        ``ignore_keys`` are dropped during flattening and are not restored by
-        this base policy.  They are suitable for recomputable caches, scratch
-        arrays and eager-only helpers, but not for semantic state such as
-        user-supplied bounds, physical parameters or configuration values.  Put
-        such state in ``static_keys`` when it is hashable and immutable, or keep
-        it as a traced child when it is array-like.  If an ignored cache must be
-        present on a reconstructed object, use a class-specific unflatten
-        wrapper that restores a safe default such as ``None`` or a fresh
-        ``dict``.
+        Ignored attributes are suitable for recomputable caches, scratch arrays
+        and eager-only helpers, but not for semantic state such as user-supplied
+        bounds, physical parameters or configuration values.  Put such state in
+        ``static_keys`` when it is hashable and immutable, or keep it as a
+        traced child when it is array-like.  If an ignored cache may be read
+        after reconstruction, declare an ``ignore_defaults`` entry so unflatten
+        restores a safe value such as ``None`` or a fresh ``dict``.
     """
 
     static_keys: Iterable[str] = ()
     ignore_keys: Iterable[str] = ()
+    ignore_defaults: Mapping[str, Any] | None = None
     static_types: tuple[type, ...] = (str, bool)
     validate_static: bool = True
 
     def __post_init__(self) -> None:
         r"""Freeze iterable configuration so the policy is stable."""
-        object.__setattr__(self, "static_keys", _as_tuple(self.static_keys))
-        object.__setattr__(self, "ignore_keys", _as_tuple(self.ignore_keys))
+        ignore_defaults = dict(self.ignore_defaults or {})
+        invalid_defaults = [
+            key for key in ignore_defaults
+            if not isinstance(key, str)
+        ]
+        if invalid_defaults:
+            raise ValueError(
+                "ignore_defaults must contain only string attribute names, "
+                f"got {invalid_defaults!r}."
+            )
+
+        static_keys = _as_key_tuple("static_keys", self.static_keys)
+        ignore_keys = tuple(
+            dict.fromkeys(
+                _as_key_tuple("ignore_keys", self.ignore_keys)
+                + tuple(ignore_defaults)
+            )
+        )
+        _validate_disjoint_keys(static_keys, ignore_keys)
+
+        object.__setattr__(self, "static_keys", static_keys)
+        object.__setattr__(
+            self,
+            "ignore_keys",
+            ignore_keys,
+        )
+        object.__setattr__(
+            self,
+            "ignore_defaults",
+            MappingProxyType(ignore_defaults),
+        )
         object.__setattr__(self, "static_types", tuple(self.static_types))
 
     def flatten(self, obj: Any) -> tuple[tuple[Any, ...], AuxData]:
@@ -202,7 +276,12 @@ class PytreePolicy:
         myclass: type,
     ) -> Any:
         r"""Reconstruct ``myclass`` from pytree data."""
-        return unflatten_func_class(aux_data, children, myclass)
+        return unflatten_func_class(
+            aux_data,
+            children,
+            myclass,
+            ignore_defaults=self.ignore_defaults,
+        )
 
     def make_flatteners(
         self,
@@ -232,6 +311,7 @@ def make_pytree_flatteners(
     *,
     static_keys: Iterable[str] = (),
     ignore_keys: Iterable[str] = (),
+    ignore_defaults: Mapping[str, Any] | None = None,
     static_types: tuple[type, ...] = (str, bool),
     validate_static: bool = True,
 ) -> tuple[Callable[[Any], tuple[tuple[Any, ...], AuxData]], Callable[[AuxData, tuple[Any, ...]], Any]]:
@@ -244,6 +324,7 @@ def make_pytree_flatteners(
     policy = PytreePolicy(
         static_keys=static_keys,
         ignore_keys=ignore_keys,
+        ignore_defaults=ignore_defaults,
         static_types=static_types,
         validate_static=validate_static,
     )

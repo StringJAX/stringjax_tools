@@ -9,8 +9,8 @@ patterns used across StringJAX projects.  It currently focuses on:
 - explicit JAX persistent-compilation-cache setup;
 - configurable pytree registration for stateful model classes.
 
-The package was extracted from JAXVacua so that this machinery can be reused by
-other StringJAX packages without importing flux-vacuum-specific code.
+The package keeps reusable transformation and pytree machinery separate from
+domain-specific StringJAX model code.
 
 ## Installation
 
@@ -34,8 +34,7 @@ import stringjax_tools
 
 ## Documentation
 
-The Sphinx documentation lives in `documentation/`, following the same basic
-layout as JAXVacua:
+The Sphinx documentation lives in `documentation/`:
 
 ```bash
 make -C documentation html
@@ -131,22 +130,25 @@ locally.  The tool package supplies only generic registration machinery.
 ```python
 from stringjax_tools.pytrees import PytreePolicy
 
-JAXVACUA_PYTREE_POLICY = PytreePolicy(
+PACKAGE_PYTREE_POLICY = PytreePolicy(
     static_keys=("h11", "h12", "model_ID", "_user_Q"),
-    ignore_keys=("_sampler", "_cache"),
+    ignore_defaults={"_sampler": None, "_cache": dict},
 )
 
-JAXVACUA_PYTREE_POLICY.register(MyModelClass)
+PACKAGE_PYTREE_POLICY.register(MyModelClass)
 ```
 
 Semantic model state belongs in `static_keys` when it is hashable and immutable,
 or in traced children when it is array-like.  Ignored attributes should be
 limited to recomputable caches, scratch state, and eager-only helpers.  Since
 JAX reconstruction bypasses `__init__`, ignored caches that may be read after a
-round trip need an explicit restore step in a class-specific unflatten wrapper,
-for example restoring `_sampler` to `None` or `_cache` with a fresh `dict`.
-Do not ignore user-supplied configuration such as physical bounds or tadpole
-values.
+round trip should be declared through `ignore_defaults`; callable defaults such
+as `dict` are called for each reconstructed object.  Do not ignore user-supplied
+configuration such as physical bounds or tadpole values.
+Static and ignored attribute names must be disjoint.  Static values are
+validated by default: they must be hashable and have scalar, self-equal
+comparison semantics, so array-like and `NaN`-like values are rejected unless a
+package deliberately opts out with `validate_static=False`.
 Leave `validate_static=True` unless the consuming package deliberately stores
 non-hashable metadata in JAX pytree auxiliary data.
 

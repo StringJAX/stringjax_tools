@@ -63,7 +63,7 @@ def _build_vmap_jit(
     r"""
     Build one ``jax.jit(jax.vmap(...))`` wrapper.
 
-    This function is intentionally small and private-ish: cache lookup and
+    This function is intentionally small and internal: cache lookup and
     cache-key normalisation happen in :func:`vmapping_func_cached`.
     """
     kwargs = dict(frozen_kwargs)

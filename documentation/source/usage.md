@@ -80,7 +80,7 @@ from stringjax_tools.pytrees import PytreePolicy
 
 PACKAGE_PYTREE_POLICY = PytreePolicy(
     static_keys=("h11", "h12", "model_ID", "_user_Q"),
-    ignore_keys=("_sampler", "_cache"),
+    ignore_defaults={"_sampler": None, "_cache": dict},
 )
 
 PACKAGE_PYTREE_POLICY.register(MyModelClass)
@@ -90,16 +90,20 @@ Semantic model state belongs in `static_keys` when it is hashable and immutable,
 or in traced children when it is array-like.  Ignored attributes should be
 limited to recomputable caches and eager-only scratch state.  Since JAX
 reconstruction bypasses `__init__`, ignored caches that may be read after a
-round-trip need an explicit restore step in a class-specific unflatten wrapper,
-for example restoring `_sampler` to `None` or `_cache` with a fresh `dict`.
-Do not ignore user-supplied configuration such as physical bounds or tadpole
-values; otherwise the reconstructed object can be missing or silently corrupt
-that state.
+round-trip should be declared through `ignore_defaults`; callable defaults such
+as `dict` are called for each reconstructed object.  Do not ignore user-supplied
+configuration such as physical bounds or tadpole values; otherwise the
+reconstructed object can be missing or silently corrupt that state.
+Static and ignored attribute names must be disjoint.  This avoids the ambiguous
+case where semantic state is declared static but then silently removed by an
+ignore rule.
 
 By default, static pytree attributes are validated before they enter JAX
-auxiliary data.  If a consuming package deliberately stores non-hashable
-metadata as static data, set `validate_static=False` in that package's local
-policy and document why this is safe.
+auxiliary data.  Static values must be hashable and have scalar, self-equal
+comparison semantics; array-like and `NaN`-like values are rejected.  If a
+consuming package deliberately stores non-hashable metadata as static data, set
+`validate_static=False` in that package's local policy and document why this is
+safe.
 
 ## Compilation cache
 

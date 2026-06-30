@@ -30,6 +30,7 @@
 
     .. autosummary::
     
+        ~PytreePolicy.ignore_defaults
         ~PytreePolicy.ignore_keys
         ~PytreePolicy.static_keys
         ~PytreePolicy.static_types

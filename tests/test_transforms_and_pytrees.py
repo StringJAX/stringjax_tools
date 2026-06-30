@@ -228,6 +228,27 @@ def test_pytree_policy_registration_maps_dynamic_children():
     np.testing.assert_allclose(np.asarray(updated.values), [2.0, 3.0])
 
 
+def test_pytree_policy_restores_ignored_defaults():
+    r"""Ignored cache fields can be restored to safe eager defaults."""
+
+    class CachedModel:
+        def __init__(self, values):
+            self.values = values
+            self._sampler = "eager-cache"
+            self._cache = {"before": True}
+
+    policy = PytreePolicy(ignore_defaults={"_sampler": None, "_cache": dict})
+    policy.register(CachedModel)
+
+    model = CachedModel(jnp.array([1.0]))
+    rebuilt = jax.tree_util.tree_map(lambda x: x, model)
+
+    assert rebuilt._sampler is None
+    assert rebuilt._cache == {}
+    assert rebuilt._cache is not model._cache
+    np.testing.assert_allclose(np.asarray(rebuilt.values), [1.0])
+
+
 def test_pytree_policy_registration_can_be_used_as_decorator():
     r"""Policy registration returns the class for decorator-style use."""
     policy = PytreePolicy(static_keys="scale", ignore_keys="_cache")
@@ -264,6 +285,27 @@ def test_make_pytree_flatteners_explicit_style():
     np.testing.assert_allclose(np.asarray(rebuilt.values), [1.0])
 
 
+def test_make_pytree_flatteners_restores_ignored_defaults():
+    r"""The explicit factory exposes the same ignored-default mechanism."""
+
+    class ExplicitCachedModel:
+        def __init__(self, values):
+            self.values = values
+            self._cache = {"drop": True}
+
+    flatten, unflatten = make_pytree_flatteners(
+        ExplicitCachedModel,
+        ignore_defaults={"_cache": dict},
+    )
+    children, aux = flatten(ExplicitCachedModel(jnp.array([1.0])))
+    rebuilt_1 = unflatten(aux, children)
+    rebuilt_2 = unflatten(aux, children)
+
+    assert rebuilt_1._cache == {}
+    assert rebuilt_2._cache == {}
+    assert rebuilt_1._cache is not rebuilt_2._cache
+
+
 def test_pytree_static_validation_rejects_unhashable_static_values():
     r"""Static aux data should be hashable by default."""
 
@@ -282,6 +324,46 @@ def test_pytree_static_validation_rejects_unhashable_static_values():
     )
     rebuilt = unflatten_func_class(aux, children, BadStatic)
     assert rebuilt.meta == {"not": "hashable"}
+
+
+def test_pytree_static_validation_rejects_non_self_equal_values():
+    r"""NaN-like static auxiliary data has unstable equality semantics."""
+
+    class BadStatic:
+        def __init__(self):
+            self.meta = float("nan")
+            self.values = jnp.ones(2)
+
+    with pytest.raises(ValueError, match="not self-equal"):
+        flatten_func(BadStatic(), static_keys=("meta",))
+
+
+def test_pytree_policy_rejects_ambiguous_or_invalid_keys():
+    r"""A policy should not silently ignore static semantic state."""
+
+    with pytest.raises(ValueError, match="both static and ignored"):
+        PytreePolicy(static_keys=("scale",), ignore_keys=("scale",))
+
+    with pytest.raises(ValueError, match="both static and ignored"):
+        PytreePolicy(static_keys=("_cache",), ignore_defaults={"_cache": None})
+
+    with pytest.raises(ValueError, match="string attribute names"):
+        PytreePolicy(static_keys=(1,))
+
+    with pytest.raises(ValueError, match="string attribute names"):
+        PytreePolicy(ignore_defaults={1: None})
+
+
+def test_pytree_ignore_defaults_are_not_externally_mutable():
+    r"""A frozen policy should not expose mutable default configuration."""
+
+    defaults = {"_cache": dict}
+    policy = PytreePolicy(ignore_defaults=defaults)
+    defaults["_sampler"] = None
+
+    assert tuple(policy.ignore_defaults) == ("_cache",)
+    with pytest.raises(TypeError):
+        policy.ignore_defaults["_other"] = None
 
 
 def test_pytree_static_validation_accepts_numpy_scalars():
