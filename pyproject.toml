@@ -15,6 +15,7 @@ authors = [
 ]
 keywords = [
     "jax",
+    "stringjax",
     "vmap",
     "jit",
     "pytrees",

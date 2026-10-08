@@ -8,6 +8,8 @@ stringjax_tools.pytrees
 The package provides the pytree mechanics only.  Consuming packages should
 define their own static and ignored attribute names locally, usually through a
 shared :class:`PytreePolicy`.
+The feature tour in :doc:`notebooks/00_crucial_features` shows a minimal class
+round-trip with static state, traced array state, and ignored cache restoration.
 
 State classification
 --------------------

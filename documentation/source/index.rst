@@ -15,10 +15,12 @@ policies; this package provides the JAX mechanics.
 Recommended first path
 ----------------------
 
-1. Read :doc:`usage` for the intended design and migration style.
-2. Run through :doc:`tutorials` for executable feature examples.
-3. Use :doc:`stringjax_tools` for the API reference.
-4. Add package-local policies, such as pytree static and ignored keys, in the
+1. Open :doc:`notebooks/00_crucial_features` for the shortest executable tour
+   of the features most packages need.
+2. Read :doc:`usage` for the intended design and migration style.
+3. Run through :doc:`tutorials` for focused examples by feature family.
+4. Use :doc:`stringjax_tools` for the API reference.
+5. Add package-local policies, such as pytree static and ignored keys, in the
    consuming package rather than in ``stringjax_tools``.
 
 Reference lookup

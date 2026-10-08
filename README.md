@@ -1,7 +1,11 @@
 # StringJAX Tools
 
 `stringjax_tools` is a small utility package for reusable JAX transform
-patterns used across [StringJAX](https://github.com/StringJAX) projects.  It currently focuses on:
+patterns used across [StringJAX](https://github.com/StringJAX) projects.  Use
+it when a package needs the same JAX mechanics in several places, but should
+not carry domain-specific names or conventions into a shared helper layer.
+
+It currently focuses on:
 
 - conservative rank-checked automatic vectorisation;
 - manual cached `jax.jit(jax.vmap(...))` wrappers;
@@ -48,6 +52,29 @@ make -C documentation html SPHINXOPTS="-W -q"
 
 The feature notebooks are included under `documentation/source/notebooks/` and
 are linked from the Sphinx tutorials page.
+
+Start with the compact feature tour:
+
+```text
+documentation/source/notebooks/00_crucial_features.ipynb
+```
+
+It shows the pieces most StringJAX packages usually need first:
+
+- `auto_vmap` for scalar-or-leading-batch public methods;
+- exact shape validation for package-local model conventions;
+- `vmapping_func_cached` for explicit `in_axes` kernels;
+- static-argument JIT helpers;
+- `PytreePolicy` for stateful model classes;
+- explicit persistent compilation-cache setup.
+
+## Package Boundary
+
+`stringjax_tools` is intentionally application-agnostic.  Consuming packages
+should define their own shape names, static keys, ignored cache attributes and
+state policies locally.  For example, a downstream package can wrap
+`stringjax_tools.auto_vmap` with package-specific defaults, while
+`stringjax_tools` itself remains free of domain language.
 
 ## Automatic Vectorisation
 
@@ -99,6 +126,12 @@ class Model:
 
 String dimensions are resolved from a bound object, usually `self`.  Derived
 dimensions should be callables rather than expression strings.
+
+The same public API can be imported from the package root when convenient:
+
+```python
+from stringjax_tools import auto_vmap
+```
 
 ## Manual Transform Helpers
 

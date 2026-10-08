@@ -24,6 +24,12 @@ Here `moduli` and `fluxes` are vectors, while `tau` is scalar.  Inputs with one
 extra leading axis are mapped in lockstep.  Inputs without the extra axis are
 broadcast with `in_axes=None`.
 
+For a package with recurring argument names, define a tiny package-local wrapper
+around `stringjax_tools.auto_vmap` and keep those names there.  The shared
+package stays generic, while the consuming package owns conventions such as
+model dimensions, flux-vector lengths, coordinate names, and strict validation
+defaults.
+
 Exact sample shapes are optional and should be reserved for public API
 boundaries, tests, and diagnostics:
 
@@ -116,3 +122,11 @@ configure_compilation_cache(cache_dir=".jax-cache", max_size_bytes=10_000_000_00
 ```
 
 Call this before the first JAX compilation in the current Python process.
+
+## Minimal feature tour
+
+The fastest executable orientation is
+`notebooks/00_crucial_features.ipynb` in the Sphinx tutorials.  It shows the
+standard combination used by downstream packages: package-local auto-vmap
+defaults, cached manual vmaps, static JIT helpers, pytree policies, and explicit
+compilation-cache setup.

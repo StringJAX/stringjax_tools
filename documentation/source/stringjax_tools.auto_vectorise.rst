@@ -5,6 +5,10 @@ stringjax_tools.auto_vectorise
 
 .. automodule:: stringjax_tools.auto_vectorise
 
+For a compact executable example of rank-only batching, strict trailing-shape
+validation, and package-local defaults, see
+:doc:`notebooks/00_crucial_features`.
+
 
 Core decorator
 --------------
@@ -36,4 +40,3 @@ Defaults and cache management
     reset_auto_vmap_default_shapes
     auto_vmap_default_shapes
     clear_auto_vmap_caches
-
