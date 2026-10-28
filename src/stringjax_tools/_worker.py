@@ -29,14 +29,18 @@ The ``__main__`` guard is required: a target that starts workers with ``multipro
 ``spawn`` (the macOS default) re-imports this file.
 """
 
+import os
 import sys
 
-# Python puts this script's directory (inside the package) first on the path; drop it before
-# anything else is imported, so that no module of the package can shadow a top-level one.
-del sys.path[0]
+# Run as a script, Python puts this script's directory (inside the package) first on the path;
+# drop it before anything else is imported, so that no module of the package can shadow a
+# top-level one. Only then: a ``multiprocessing`` worker started under ``spawn`` re-runs this
+# file after restoring the parent's path, whose first entry must stay.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if sys.path and os.path.abspath(sys.path[0] or os.curdir) == _HERE:
+    del sys.path[0]
 
 import importlib  # noqa: E402
-import os  # noqa: E402
 import pickle  # noqa: E402
 import shutil  # noqa: E402
 import signal  # noqa: E402

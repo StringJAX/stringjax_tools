@@ -160,7 +160,7 @@ def test_version_is_the_same_in_every_place():
     import re
 
     root = Path(__file__).resolve().parents[1]
-    pyproject = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(), re.M)
-    citation = re.search(r"^version:\s*(\S+)\s*$", (root / "CITATION.cff").read_text(), re.M)
+    pyproject = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(), re.MULTILINE)
+    citation = re.search(r"^version:\s*(\S+)\s*$", (root / "CITATION.cff").read_text(), re.MULTILINE)
     assert pyproject and citation
     assert pyproject.group(1) == citation.group(1) == stringjax_tools.__version__

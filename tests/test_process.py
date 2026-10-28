@@ -80,6 +80,20 @@ HELPERS = textwrap.dedent(
     def hard_exit():
         os._exit(3)
 
+    def _square_into(queue, x):
+        queue.put(x * x)
+
+    def spawn_grandchild_via_multiprocessing(x):
+        # like CYTools' GV backend: a multiprocessing worker under the spawn start method, which
+        # re-runs the worker script and must still import this module (found via extra_paths)
+        import multiprocessing as mp
+        ctx = mp.get_context("spawn")
+        queue = ctx.Queue()
+        proc = ctx.Process(target=_square_into, args=(queue, x))
+        proc.start()
+        proc.join(60)
+        return proc.exitcode, (queue.get(timeout=5) if proc.exitcode == 0 else None)
+
     class Holder:
         @staticmethod
         def double(x):
@@ -219,6 +233,11 @@ def test_normal_return_leaves_no_grandchild(helpers, tmp_path, reaper):
     grandchild = _read_pid(pid_file)
     reaper.append(grandchild)
     assert _wait_dead(grandchild, 5), "a process the target started outlived the call"
+
+
+def test_multiprocessing_spawn_inside_the_target(helpers):
+    assert run_in_subprocess("sjt_helpers:spawn_grandchild_via_multiprocessing", (7,), timeout=120,
+                             extra_paths=helpers) == (0, 49)
 
 
 def test_fast_call_within_timeout(helpers):

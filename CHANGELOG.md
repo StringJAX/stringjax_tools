@@ -14,7 +14,8 @@ Notable changes to StringJAX Tools, newest first. The format follows
   the group is killed too, so nothing it started outlives the call. An exception in the child
   raises `ChildProcessFailed` (a `RuntimeError`, picklable) with its type and traceback; warnings
   are re-emitted in the parent with the nearest built-in category; if the parent dies, the child
-  removes its temporary files and stops, also when the parent has forked. Unlike a timer that
+  removes its temporary files and stops, also when the parent has forked; the function may itself
+  start `multiprocessing` workers (also under `spawn`). Unlike a timer that
   interrupts the main thread, it works when a library has installed its own SIGINT handler and
   when the call runs compiled code or worker processes. POSIX only.
 - `provenance`, `package_info` and `git_state` (`stringjax_tools.reproducibility`): a JSON-safe
