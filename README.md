@@ -11,7 +11,10 @@ It currently focuses on:
 - manual cached `jax.jit(jax.vmap(...))` wrappers;
 - small helpers for explicit static-argument JIT compilation;
 - explicit JAX persistent-compilation-cache setup;
-- configurable pytree registration for stateful model classes.
+- configurable pytree registration for stateful model classes;
+- running a call in a child process with an enforced timeout
+  (`run_in_subprocess`);
+- recording which code produced a result (`provenance`).
 
 The package keeps reusable transformation and pytree machinery separate from
 domain-specific StringJAX model code.
@@ -24,7 +27,7 @@ From this directory:
 pip install -e ".[dev,docs]"
 ```
 
-The intended published package name is:
+From PyPI:
 
 ```bash
 pip install stringjax-tools

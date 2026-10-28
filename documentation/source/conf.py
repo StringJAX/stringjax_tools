@@ -76,7 +76,7 @@ napoleon_custom_sections = [("Returns", "params_style")]
 
 html_theme = "sphinx_book_theme"
 html_theme_options = {
-    "repository_url": "https://github.com/StringJAX/stringjax-tools",
+    "repository_url": "https://github.com/StringJAX/stringjax_tools",
     "repository_branch": "main",
     "path_to_docs": "documentation/source",
     "use_repository_button": True,

@@ -7,7 +7,9 @@ stringjax_tools
 Package overview
 ----------------
 
-``stringjax_tools`` is organised around small, composable JAX transform helpers.
+``stringjax_tools`` is organised around small, composable JAX transform helpers,
+plus general-purpose infrastructure: running a call in a child process with an
+enforced timeout, and recording the provenance of a result.
 The modules are intentionally independent from any StringJAX application
 package.
 
@@ -43,3 +45,5 @@ namespace.
     stringjax_tools.jit
     stringjax_tools.cache
     stringjax_tools.pytrees
+    stringjax_tools.process
+    stringjax_tools.reproducibility

@@ -5,7 +5,8 @@ StringJAX Tools
 patterns used across StringJAX projects.  It collects conservative
 auto-vectorisation, cached manual ``vmap``/``jit`` wrappers, static-argument
 JIT helpers, explicit compilation-cache setup, and configurable pytree
-registration utilities.
+registration utilities, together with general-purpose infrastructure: a child
+process runner with an enforced timeout and a provenance record.
 
 The package is intentionally application-agnostic.  It should not know about
 flux vacua, Calabi-Yau moduli, charge conventions, or any other package-level

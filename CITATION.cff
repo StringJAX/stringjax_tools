@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use StringJAX Tools, please cite it as below."
+title: "StringJAX Tools"
+abstract: >-
+  Reusable JAX transform, vectorisation, cache and pytree helpers, and
+  general-purpose infrastructure, for StringJAX packages.
+type: software
+authors:
+  - family-names: Schachner
+    given-names: Andreas
+repository-code: "https://github.com/StringJAX/stringjax_tools"
+url: "https://stringjax-tools.readthedocs.io"
+license: GPL-3.0-or-later
+version: 0.2.0
+date-released: "2026-10-28"
+keywords:
+  - JAX
+  - vmap
+  - jit
+  - pytrees
+  - StringJAX

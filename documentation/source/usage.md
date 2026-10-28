@@ -123,6 +123,38 @@ configure_compilation_cache(cache_dir=".jax-cache", max_size_bytes=10_000_000_00
 
 Call this before the first JAX compilation in the current Python process.
 
+## Child processes with an enforced timeout
+
+`run_in_subprocess` runs a module-level function in a fresh Python process and
+kills it, with every process in its process group, when the timeout expires (and
+stops anything it started when it returns):
+
+```python
+from stringjax_tools import run_in_subprocess
+
+gvs = run_in_subprocess("mypackage.gv:compute", (geometry,), timeout=600)
+```
+
+It raises `TimeoutError` on expiry and `ChildProcessFailed` (a `RuntimeError`)
+if the child raised.  The arguments and the result must be picklable.  If the
+parent dies, the child notices and stops, so no worker is left running.  POSIX
+only.
+
+## Provenance
+
+`provenance` returns a JSON-safe record of the code a result came from: per
+package the distribution version, the module's `__version__` (if imported), the
+source directory and its git commit and dirty state, plus JAX's version and
+64-bit setting:
+
+```python
+from stringjax_tools import provenance
+
+record = provenance(["jaxvacua", "jaxpolylog"], seed=0)
+```
+
+Call it after the packages a run uses are imported.
+
 ## Minimal feature tour
 
 The fastest executable orientation is

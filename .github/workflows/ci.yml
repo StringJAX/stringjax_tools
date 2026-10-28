@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.12", "3.13"]
 
     steps:
       - name: Check out repository
@@ -33,15 +33,15 @@ jobs:
         run: python -m pytest
 
       - name: Build documentation
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         env:
           MPLCONFIGDIR: ${{ runner.temp }}/matplotlib
         run: make -C documentation html SPHINXOPTS="-W -q"
 
       - name: Build package artifacts
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         run: python -m build
 
       - name: Validate package artifacts
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.12'
         run: python -m twine check dist/*
